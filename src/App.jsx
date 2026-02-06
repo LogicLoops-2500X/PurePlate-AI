@@ -24,7 +24,12 @@ import {
 } from 'lucide-react';
 
 // Configuration
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY; // Environment provides this at runtime
+// --- Configuration (Top of file) ---
+const API_KEYS = [
+  import.meta.env.VITE_GEMINI_API_KEY_1,
+  import.meta.env.VITE_GEMINI_API_KEY_2,
+  import.meta.env.VITE_GEMINI_API_KEY_3
+].filter(key => key); // This removes any empty/undefined keys automatically
 const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
 
 const ALLERGY_OPTIONS = [
@@ -71,15 +76,30 @@ const App = () => {
 
     setBmiData({ ...bmiData, result: bmi, category: cat });
   };
-// --- AI LOGIC (FIXED) ---
+// --- AI LOGIC (FINAL HACKATHON VERSION) ---
   const performAIAnalysis = async (query) => {
     if (!query.trim()) return;
+
+    // 1. CACHE CHECK: Search history first to save API quota for the judges
+    const cached = history.find(item => 
+      item.productName.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (cached) {
+      setAnalysisData(cached);
+      setView('search');
+      return; 
+    }
     
     setLoading(true);
     setAnalysisData(null);
     setActiveResultTab('safety');
     setView('search');
 
+    // 2. KEY ROTATION: Picks a random key from your list
+    const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+
+    // 3. THE PROMPT: This is what makes the AI act as an expert
     const systemPrompt = `You are PurePlate AI, an advanced food toxicity and nutritional analyzer. 
     Analyze: "${query}".
     
@@ -87,62 +107,64 @@ const App = () => {
     - Allergies: ${allergies.join(", ") || "None"}.
     - BMI: ${bmiData.result || "Unknown"} (${bmiData.category || "N/A"}).
 
-    Return exactly JSON:
+    Return exactly this JSON structure:
     {
       "productName": "Name",
       "healthScore": 0-100,
       "verdict": "Safe" | "Caution" | "Avoid",
-      "summary": "Personalized 1-sentence summary.",
+      "summary": "1-sentence personalized summary based on user BMI and allergies.",
       "composition": { "safe": 0, "questionable": 0, "harmful": 0 },
       "nutrition": { "calories": 0, "protein": 0, "carbs": 0, "fats": 0, "sugar": 0 },
-      "ingredients": [{ "name": "s", "risk": "Low"|"Medium"|"High", "impact": "s", "tags": [], "alternative": "s" }],
+      "ingredients": [{ 
+        "name": "s", 
+        "risk": "Low"|"Medium"|"High", 
+        "impact": "Brief scientific impact", 
+        "tags": ["Vegan", "Preservative", etc], 
+        "alternative": "Healthier swap" 
+      }],
       "allergyAlerts": []
     }`;
 
     try {
-      const payload = {
-        contents: [{ parts: [{ text: `Analyze: ${query}` }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: { 
-          responseMimeType: "application/json",
-          temperature: 0.1 // Keeps response stable
-        }
-      };
-
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Analyze the food item: ${query}` }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: { 
+            responseMimeType: "application/json",
+            temperature: 0.2 // Keeps results consistent
+          }
+        })
       });
 
       const data = await response.json();
       
-      // PROTECTION 1: Check if path exists
+      // 4. DATA EXTRACTION
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      // PROTECTION 2: Check for null/undefined before parsing
+      
       if (!rawText) {
-        throw new Error("API returned no content. Check your API Key or Quota.");
+        throw new Error(data.error?.message || "Quota Reached");
       }
 
-      // PROTECTION 3: Safe Parsing
       const parsed = JSON.parse(rawText);
       
+      // 5. UPDATE STATE & HISTORY
       const historyItem = { ...parsed, id: Date.now(), timestamp: new Date().toLocaleString() };
       setHistory(prev => [historyItem, ...prev]);
       setAnalysisData(parsed);
       setSearchQuery("");
-
+      
     } catch (error) {
-      console.error("PurePlate AI Error:", error);
-      // Set a graceful error state so the UI doesn't break
+      console.error("Analysis Error:", error);
       setAnalysisData({ 
-        error: "Analysis failed. Please try again later.",
-        productName: "Error",
+        error: "Quota limit reached. Please check the Vault for previous scans.",
+        productName: "Connection Error",
+        summary: "The AI is currently resting. Try searching for a previously scanned item!",
         healthScore: 0,
         verdict: "Caution",
-        summary: "We couldn't reach the AI. Please check your internet or API key.",
-        composition: { safe: 0, questionable: 0, harmful: 100 },
+        composition: { safe: 0, questionable: 0, harmful: 0 },
         nutrition: { calories: 0, protein: 0, carbs: 0, fats: 0 },
         ingredients: []
       });
