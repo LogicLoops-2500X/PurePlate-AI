@@ -28,4 +28,4 @@ PurePlate AI is a mobile-first web application designed to empower users with in
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/your-username/pureplate-ai.git](https://github.com/your-username/pureplate-ai.git)
+ https://github.com/LogicLoops-2500X/PurePlate-AI.git
