@@ -71,15 +71,14 @@ const App = () => {
 
     setBmiData({ ...bmiData, result: bmi, category: cat });
   };
-
-  // --- AI LOGIC ---
+// --- AI LOGIC (FIXED) ---
   const performAIAnalysis = async (query) => {
     if (!query.trim()) return;
     
     setLoading(true);
     setAnalysisData(null);
     setActiveResultTab('safety');
-    setView('search'); // Switch to search result view
+    setView('search');
 
     const systemPrompt = `You are PurePlate AI, an advanced food toxicity and nutritional analyzer. 
     Analyze: "${query}".
@@ -94,8 +93,8 @@ const App = () => {
       "healthScore": 0-100,
       "verdict": "Safe" | "Caution" | "Avoid",
       "summary": "Personalized 1-sentence summary.",
-      "composition": { "safe": %, "questionable": %, "harmful": % },
-      "nutrition": { "calories": n, "protein": n, "carbs": n, "fats": n, "sugar": n },
+      "composition": { "safe": 0, "questionable": 0, "harmful": 0 },
+      "nutrition": { "calories": 0, "protein": 0, "carbs": 0, "fats": 0, "sugar": 0 },
       "ingredients": [{ "name": "s", "risk": "Low"|"Medium"|"High", "impact": "s", "tags": [], "alternative": "s" }],
       "allergyAlerts": []
     }`;
@@ -104,7 +103,10 @@ const App = () => {
       const payload = {
         contents: [{ parts: [{ text: `Analyze: ${query}` }] }],
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: { responseMimeType: "application/json" }
+        generationConfig: { 
+          responseMimeType: "application/json",
+          temperature: 0.1 // Keeps response stable
+        }
       };
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`, {
@@ -114,15 +116,36 @@ const App = () => {
       });
 
       const data = await response.json();
-      const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
+      
+      // PROTECTION 1: Check if path exists
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      // PROTECTION 2: Check for null/undefined before parsing
+      if (!rawText) {
+        throw new Error("API returned no content. Check your API Key or Quota.");
+      }
+
+      // PROTECTION 3: Safe Parsing
+      const parsed = JSON.parse(rawText);
       
       const historyItem = { ...parsed, id: Date.now(), timestamp: new Date().toLocaleString() };
       setHistory(prev => [historyItem, ...prev]);
       setAnalysisData(parsed);
       setSearchQuery("");
+
     } catch (error) {
-      console.error(error);
-      setAnalysisData({ error: "Analysis failed." });
+      console.error("PurePlate AI Error:", error);
+      // Set a graceful error state so the UI doesn't break
+      setAnalysisData({ 
+        error: "Analysis failed. Please try again later.",
+        productName: "Error",
+        healthScore: 0,
+        verdict: "Caution",
+        summary: "We couldn't reach the AI. Please check your internet or API key.",
+        composition: { safe: 0, questionable: 0, harmful: 100 },
+        nutrition: { calories: 0, protein: 0, carbs: 0, fats: 0 },
+        ingredients: []
+      });
     } finally {
       setLoading(false);
     }
