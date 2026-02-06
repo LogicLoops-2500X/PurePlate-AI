@@ -1,16 +1,31 @@
-# React + Vite
+# 🛡️ PurePlate AI
+**Advanced Food Toxicity & Nutritional Intelligence** *Developed for Neural X AI Hackathon, Tezpur University*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PurePlate AI is a mobile-first web application designed to empower users with instant, scientific insights into what they consume. By combining user-specific biological data (BMI and Allergies) with Real-Time AI analysis, PurePlate identifies hidden toxins, harmful additives, and nutritional risks that standard labels often hide.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Key Features
+* **AI Ingredient Analysis:** Uses Gemini 2.5 Flash to scan and interpret complex chemical names in food ingredients.
+* **Biological Guard:** Personalized alerts based on a user-configured profile (Allergies like Gluten, Soy, Peanuts, etc.).
+* **BMI Intelligence:** Dynamically adjusts nutritional advice based on the user's Body Mass Index.
+* **Safety Scoring:** A proprietary 0-100 health score derived from composition analysis (Safe vs. Questionable vs. Harmful).
+* **The Vault:** A local-storage-powered history tracker to review past scans without extra API costs.
+* **Scientific Alternatives:** Recommends healthier swaps for high-risk ingredients.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tech Stack
+* **Frontend:** React.js, Tailwind CSS
+* **Icons:** Lucide React
+* **AI Engine:** Google Gemini API (Generative AI)
+* **Deployment:** Vercel
+* **Version Control:** GitHub
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Installation & Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/your-username/pureplate-ai.git](https://github.com/your-username/pureplate-ai.git)
