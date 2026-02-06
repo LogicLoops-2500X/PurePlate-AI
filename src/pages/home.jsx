@@ -22,7 +22,7 @@ import {
 // Configuration
 // Change v1beta to v1 for better stability with Flash models
 // const API_KEY = process.env.API_KEY; 
-const API_KEY = "AIzaSyAJItgR5UcD2xmETGn6_tiXvGseJscR5gw";
+const API_KEY = "";
 const MODEL_NAME = "gemini-1.5-flash"; // No 'models/' prefix here
 const API_URL = "https://generativelanguage.googleapis.com/v1beta";
 const ALLERGY_OPTIONS = [
